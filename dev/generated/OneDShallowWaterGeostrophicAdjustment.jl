@@ -156,7 +156,7 @@ plot(grid.x/1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
      title = "A gaussian bump with half-width ≈ "*string(gaussian_width/1e3)*" km",
       size = (600, 260))
 
-mask = @. 1/4 * (1 + tanh( -(grid.x-100e3)/10e3 )) * (1 + tanh( (grid.x+100e3)/10e3 ))
+mask = @. 1/4 * (1 + tanh( -(grid.x - 100e3) / 10e3)) * (1 + tanh( (grid.x + 100e3) / 10e3))
 
 noise_amplitude = 0.1 # the amplitude of the noise for η(x,t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
