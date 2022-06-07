@@ -1,4 +1,4 @@
-using FourierFlows, Plots, Printf, Random
+using FourierFlows, CairoMakie, Printf, Random, JLD2
 using LinearAlgebra: mul!, ldiv!
 
 struct Params{T} <: AbstractParams
@@ -142,52 +142,42 @@ gaussian_width = 6e3
 gaussian_amplitude = 3.0
 gaussian_bump = @. gaussian_amplitude * exp( - grid.x^2 / (2*gaussian_width^2) )
 
-plot(grid.x/1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
-     color = :black,
-    legend = false,
- linewidth = 2,
-     alpha = 0.7,
-     xlims = (-Lx/2e3, Lx/2e3),
-    xlabel = "x [km]",
-    ylabel = "η [m]",
-     title = "A gaussian bump with half-width ≈ "*string(gaussian_width/1e3)*" km",
-      size = (600, 260))
+fig = Figure(resolution = (600, 260))
+ax =  Axis(fig[1, 1];
+           xlabel = "x [km]",
+           ylabel = "η [m]",
+           title = "A gaussian bump with half-width ≈ " * string(gaussian_width/1e3) * " km",
+           limits = ((-Lx/2e3, Lx/2e3), nothing))
+
+lines!(ax, grid.x/1e3, gaussian_bump;    # divide with 1e3 to convert m -> km
+       color = (:black, 0.7),
+       linewidth = 2)
+
+save("gaussian_bump.svg", fig); nothing # hide
 
 mask = @. 1/4 * (1 + tanh( -(grid.x - 100e3) / 10e3)) * (1 + tanh( (grid.x + 100e3) / 10e3))
 
-noise_amplitude = 0.1 # the amplitude of the noise for η(x,t=0) (m)
+noise_amplitude = 0.1 # the amplitude of the noise for η(x, t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
 @. η_noise *= mask    # mask the noise
 
-plot_noise = plot(grid.x/1e3, η_noise,      # divide with 1e3 to convert m -> km
-                 color = :black,
-                legend = :false,
-             linewidth = [3 2],
-                 alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
-                 ylims = (-0.3, 0.3),
-                xlabel = "x [km]",
-                ylabel = "η [m]")
+fig = Figure(resolution = (600, 520))
 
-plot_mask = plot(grid.x/1e3, mask,          # divide with 1e3 to convert m -> km
-                 color = :gray,
-                legend = :false,
-             linewidth = [3 2],
-                 alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
-                xlabel = "x [km]",
-                ylabel = "mask")
+kwargs = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), nothing))
 
-title = plot(title = "Small-scale noise",
-              grid = false,
-          showaxis = false,
-            xticks = [],
-            yticks = [],
-     bottom_margin = -20Plots.px)
+ax1 =  Axis(fig[1, 1]; ylabel = "η [m]", title = "small-scale noise", kwargs...)
 
-plot(title, plot_noise, plot_mask,
-           layout = @layout([A{0.01h}; [B; C]]),
-             size = (600, 400))
+ax2 =  Axis(fig[2, 1]; ylabel = "mask", kwargs...)
+
+lines!(ax1, grid.x/1e3, η_noise;      # divide with 1e3 to convert m -> km
+       color = (:black, 0.7),
+       linewidth = 3)
+
+lines!(ax2, grid.x/1e3, mask;         # divide with 1e3 to convert m -> km
+       color = (:gray, 0.7),
+       linewidth = 2)
+
+save("noise-mask.svg", fig); nothing # hide
 
 η0 = @. gaussian_bump + η_noise
 u0 = zeros(grid.nx)
@@ -195,111 +185,123 @@ v0 = zeros(grid.nx)
 
 set_uvη!(prob, u0, v0, η0)
 
-plot(grid.x/1e3, η0,    # divide with 1e3 to convert m -> km
-     color = :black,
-    legend = false,
- linewidth = 2,
-     alpha = 0.7,
-     xlims = (-Lx/2e3, Lx/2e3),
-    xlabel = "x [km]",
-    ylabel = "η [m]",
-     title = "initial surface elevation, η(x, t=0)",
-      size = (600, 260))
+fig = Figure(resolution = (600, 260))
 
-function plot_output(prob)
-  plot_η = plot(grid.x/1e3, vars.η,         # divide with 1e3 to convert m -> km
-                 color = :blue,
-                legend = false,
-             linewidth = 2,
-                 alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
-                xlabel = "x [km]",
-                ylabel = "η [m]")
+ax =  Axis(fig[1, 1];
+           xlabel = "x [km]",
+           ylabel = "η [m]",
+           title = "initial surface elevation, η(x, t=0)",
+           limits = ((-Lx/2e3, Lx/2e3), nothing))
 
-  plot_u = plot(grid.x/1e3, vars.u,         # divide with 1e3 to convert m -> km
-                 color = :red,
-                legend = false,
-             linewidth = 2,
-                 alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
-                 ylims = (-0.3, 0.3),
-                xlabel = "x [km]",
-                ylabel = "u [m s⁻¹]")
+lines!(ax, grid.x/1e3, η0;    # divide with 1e3 to convert m -> km
+       color = (:black, 0.7),
+       linewidth = 2)
 
-  plot_v = plot(grid.x/1e3, vars.v,         # divide with 1e3 to convert m -> km
-                 color = :green,
-                legend = false,
-             linewidth = 2,
-                 alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
-                 ylims = (-0.3, 0.3),
-                xlabel = "x [km]",
-                ylabel = "v [m s⁻¹]")
+save("initial_eta.svg", fig); nothing # hide
 
-  Ld = @sprintf "%.2f" sqrt(g*H)/f /1e3     # divide with 1e3 to convert m -> km
-  plottitle = "Deformation radius √(gh) / f = "*string(Ld)*" km"
+filepath = "."
+filename = joinpath(filepath, "linear_swe.jld2")
 
-  title = plot(title = plottitle,
-                grid = false,
-            showaxis = false,
-              xticks = [],
-              yticks = [],
-       bottom_margin = -30Plots.px)
+get_sol(prob) = prob.sol
 
-  return plot(title, plot_η, plot_u, plot_v,
-           layout = @layout([A{0.01h}; [B; C; D]]),
-             size = (600, 800))
-end
-nothing # hide
+out = Output(prob, filename, (:sol, get_sol))
 
-p = plot_output(prob)
+saveproblem(out)
 
-anim = @animate for j = 0:nsteps
+for j = 0:nsteps
   updatevars!(prob)
-
-  p[2][1][:y] = vars.η    # updates the plot for η
-  p[2][:title] = "t = " * @sprintf("%.1f", prob.clock.t/60) * " min" # updates time in the title
-  p[3][1][:y] = vars.u    # updates the plot for u
-  p[4][1][:y] = vars.v    # updates the plot for v
-
   stepforward!(prob)
+  saveoutput(out)
 end
 
-mp4(anim, "onedshallowwater.mp4", fps=18)
+using JLD2
+
+file = jldopen(out.path)
+iterations = parse.(Int, keys(file["snapshots/t"]))
+
+nx = file["grid/nx"]
+ x = file["grid/x"]
+
+ n = Observable(1)
+
+u = @lift irfft(file[string("snapshots/sol/", iterations[$n])][:, 1], nx)
+v = @lift irfft(file[string("snapshots/sol/", iterations[$n])][:, 2], nx)
+η = @lift irfft(file[string("snapshots/sol/", iterations[$n])][:, 3], nx)
+
+toptitle = @lift "t = " * @sprintf("%.1f", file[string("snapshots/t/", iterations[$n])]/60) * " min"
+
+fig = Figure(resolution = (600, 800))
+
+kwargs_η = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), nothing))
+kwargs_uv = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
+
+ax_η =  Axis(fig[2, 1]; ylabel = "η [m]", title = toptitle, kwargs_η...)
+
+ax_u =  Axis(fig[3, 1]; ylabel = "u [m s⁻¹]", kwargs_uv...)
+
+ax_v =  Axis(fig[4, 1]; ylabel = "v [m s⁻¹]", kwargs_uv...)
+
+Ld = @sprintf "%.2f" sqrt(g * H) / f /1e3     # divide with 1e3 to convert m -> km
+title = "Deformation radius √(gh) / f = "*string(Ld)*" km"
+
+fig[1, 1] = Label(fig, title, textsize=24, tellwidth=false)
+
+lines!(ax_η, grid.x/1e3, η; # divide with 1e3 to convert m -> km
+       color = (:blue, 0.7))
+
+lines!(ax_u, grid.x/1e3, u; # divide with 1e3 to convert m -> km
+       color = (:red, 0.7))
+
+lines!(ax_v, grid.x/1e3, v; # divide with 1e3 to convert m -> km
+       color = (:green, 0.7))
+
+frames = 1:length(iterations)
+
+record(fig, "onedshallowwater.mp4", frames, framerate=18) do i
+    n[] = i
+end
+nothing #hide
 
 u_geostrophic = zeros(grid.nx)  # -g/f ∂η/∂y = 0
 v_geostrophic = params.g / params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x
 
-plot_u = plot(grid.x/1e3, [vars.u u_geostrophic], # divide with 1e3 to convert m -> km
-                 color = [:red :purple],
-                labels = ["u" "- g/f ∂η/∂y"],
-             linewidth = [3 2],
-                 alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),       # divide with 1e3 to convert m -> km
-                 ylims = (-0.3, 0.3),
-                xlabel = "x [km]",
-                ylabel = "u [m s⁻¹]")
+nothing # hide
 
-plot_v = plot(grid.x/1e3, [vars.v v_geostrophic], # divide with 1e3 to convert m -> km
-                 color = [:green :purple],
-                labels = ["v" "g/f ∂η/∂x"],
-             linewidth = [3 2],
-                 alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),       # divide with 1e3 to convert m -> km
-                 ylims = (-0.3, 0.3),
-                xlabel = "x [km]",
-                ylabel = "v [m s⁻¹]")
+fig = Figure(resolution = (600, 600))
 
-title = plot(title = "Geostrophic balance",
-              grid = false,
-          showaxis = false,
-            xticks = [],
-            yticks = [],
-     bottom_margin = -20Plots.px)
+kwargs = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
 
-plot(title, plot_u, plot_v,
-           layout = @layout([A{0.01h}; [B; C]]),
-             size = (600, 400))
+ax_u =  Axis(fig[2, 1]; ylabel = "u [m s⁻¹]", kwargs...)
+
+ax_v =  Axis(fig[3, 1]; ylabel = "v [m s⁻¹]", kwargs...)
+
+fig[1, 1] = Label(fig, "Geostrophic balance", textsize=24, tellwidth=false)
+
+lines!(ax_u, grid.x/1e3, vars.u; # divide with 1e3 to convert m -> km
+       label = "u",
+       linewidth = 3,
+       color = (:red, 0.7))
+
+lines!(ax_u, grid.x/1e3, u_geostrophic; # divide with 1e3 to convert m -> km
+       label = "- g/f ∂η/∂y",
+       linewidth = 3,
+       color = (:purple, 0.7))
+
+axislegend(ax_u)
+
+lines!(ax_v, grid.x/1e3, vars.v; # divide with 1e3 to convert m -> km
+       label = "v",
+       linewidth = 3,
+       color = (:green, 0.7))
+
+lines!(ax_v, grid.x/1e3, v_geostrophic; # divide with 1e3 to convert m -> km
+       label = "g/f ∂η/∂x",
+       linewidth = 3,
+       color = (:purple, 0.7))
+
+axislegend(ax_v)
+
+save("geostrophic_balance.svg", fig); nothing # hide
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 
