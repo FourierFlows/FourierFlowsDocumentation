@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Linear rotating shallow water dynamics · FourierFlows.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://fourierflows.github.io/FourierFlowsDocumentation/dev/literated/OneDShallowWaterGeostrophicAdjustment/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">FourierFlows.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../installation_instructions/">Installation Instructions</a></li><li><a class="tocitem" href="../../basics/">Code Basics</a></li><li><a class="tocitem" href="../../grids/">Grids</a></li><li><a class="tocitem" href="../../aliasing/">Aliasing</a></li><li><a class="tocitem" href="../../problem/">Problem</a></li><li><a class="tocitem" href="../../diagnostics/">Diagnostics</a></li><li><a class="tocitem" href="../../output/">Output</a></li><li><a class="tocitem" href="../../gpu/">GPU</a></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Linear rotating shallow water dynamics</a><ul class="internal"><li><a class="tocitem" href="#Coding-up-the-equations"><span>Coding up the equations</span></a></li><li><a class="tocitem" href="#Let&#39;s-prescibe-parameter-values-and-solve-the-PDE"><span>Let&#39;s prescibe parameter values and solve the PDE</span></a></li><li><a class="tocitem" href="#Choosing-a-device:-CPU-or-GPU"><span>Choosing a device: CPU or GPU</span></a></li><li><a class="tocitem" href="#Numerical-parameters-and-time-stepping-parameters"><span>Numerical parameters and time-stepping parameters</span></a></li><li><a class="tocitem" href="#Physical-parameters"><span>Physical parameters</span></a></li><li><a class="tocitem" href="#Construct-the-structs-and-you-are-ready-to-go!"><span>Construct the <code>struct</code>s and you are ready to go!</span></a></li><li><a class="tocitem" href="#Setting-initial-conditions"><span>Setting initial conditions</span></a></li><li><a class="tocitem" href="#Saving-output"><span>Saving output</span></a></li><li><a class="tocitem" href="#Time-stepping-the-Problem-forward"><span>Time-stepping the <code>Problem</code> forward</span></a></li><li><a class="tocitem" href="#Visualizing-the-simulation"><span>Visualizing the simulation</span></a></li><li><a class="tocitem" href="#Geostrophic-balance"><span>Geostrophic balance</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributor&#39;s guide</a></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../library/outline/">Contents</a></li><li><a class="tocitem" href="../../library/public/">Public</a></li><li><a class="tocitem" href="../../library/internals/">Private</a></li><li><a class="tocitem" href="../../library/function_index/">Function index</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Linear rotating shallow water dynamics</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Linear rotating shallow water dynamics</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/FourierFlows/FourierFlowsDocumentation/blob/main/examples/OneDShallowWaterGeostrophicAdjustment.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Linear-rotating-shallow-water-dynamics"><a class="docs-heading-anchor" href="#Linear-rotating-shallow-water-dynamics">Linear rotating shallow water dynamics</a><a id="Linear-rotating-shallow-water-dynamics-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-rotating-shallow-water-dynamics" title="Permalink"></a></h1><p>This example can be run online via <a href="https://mybinder.org/v2/gh/FourierFlows/FourierFlowsDocumentation/gh-pages?filepath=dev/literated/OneDShallowWaterGeostrophicAdjustment.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a>. Also, it can be viewed as a Jupyter notebook via <a href="https://nbviewer.jupyter.org/github/FourierFlows/FourierFlowsDocumentation/blob/gh-pages/dev/literated/OneDShallowWaterGeostrophicAdjustment.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a>.</p><p>This example solves the linear 1D rotating shallow water equations for the <span>$u(x, t)$</span>, <span>$v(x, t)$</span> and the surface surface elevation <span>$\eta(x, t)$</span>, for a fluid with constant rest-depth <span>$H$</span>. That is, the total fluid&#39;s depth is <span>$H + \eta(x, t)$</span> with <span>$|\eta| \ll H$</span>.</p><p>The linearized equations for the evolution of <span>$u$</span>, <span>$v$</span>, <span>$\eta$</span> are:</p><p class="math-container">\[\begin{aligned}
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Linear rotating shallow water dynamics · FourierFlows.jl</title><meta name="title" content="Linear rotating shallow water dynamics · FourierFlows.jl"/><meta property="og:title" content="Linear rotating shallow water dynamics · FourierFlows.jl"/><meta property="twitter:title" content="Linear rotating shallow water dynamics · FourierFlows.jl"/><meta name="description" content="Documentation for FourierFlows.jl."/><meta property="og:description" content="Documentation for FourierFlows.jl."/><meta property="twitter:description" content="Documentation for FourierFlows.jl."/><meta property="og:url" content="https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/"/><meta property="twitter:url" content="https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/"/><link rel="canonical" href="https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">FourierFlows.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../installation_instructions/">Installation Instructions</a></li><li><a class="tocitem" href="../../basics/">Code Basics</a></li><li><a class="tocitem" href="../../grids/">Grids</a></li><li><a class="tocitem" href="../../aliasing/">Aliasing</a></li><li><a class="tocitem" href="../../problem/">Problem</a></li><li><a class="tocitem" href="../../timestepping/">Time stepping</a></li><li><a class="tocitem" href="../../diagnostics/">Diagnostics</a></li><li><a class="tocitem" href="../../output/">Output</a></li><li><a class="tocitem" href="../../gpu/">GPU</a></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Linear rotating shallow water dynamics</a><ul class="internal"><li><a class="tocitem" href="#Coding-up-the-equations"><span>Coding up the equations</span></a></li><li><a class="tocitem" href="#Let&#39;s-prescibe-parameter-values-and-solve-the-PDE"><span>Let&#39;s prescibe parameter values and solve the PDE</span></a></li><li><a class="tocitem" href="#Choosing-a-device:-CPU-or-GPU"><span>Choosing a device: CPU or GPU</span></a></li><li><a class="tocitem" href="#Numerical-parameters-and-time-stepping-parameters"><span>Numerical parameters and time-stepping parameters</span></a></li><li><a class="tocitem" href="#Physical-parameters"><span>Physical parameters</span></a></li><li><a class="tocitem" href="#Construct-the-structs-and-you-are-ready-to-go!"><span>Construct the <code>struct</code>s and you are ready to go!</span></a></li><li><a class="tocitem" href="#Setting-initial-conditions"><span>Setting initial conditions</span></a></li><li><a class="tocitem" href="#Saving-output"><span>Saving output</span></a></li><li><a class="tocitem" href="#Time-stepping-the-Problem-forward"><span>Time-stepping the <code>Problem</code> forward</span></a></li><li><a class="tocitem" href="#Visualizing-the-simulation"><span>Visualizing the simulation</span></a></li><li><a class="tocitem" href="#Geostrophic-balance"><span>Geostrophic balance</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributor&#39;s guide</a></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../library/outline/">Contents</a></li><li><a class="tocitem" href="../../library/public/">Public</a></li><li><a class="tocitem" href="../../library/internals/">Private</a></li><li><a class="tocitem" href="../../library/function_index/">Function index</a></li></ul></li><li><a class="tocitem" href="../../references/">References</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Linear rotating shallow water dynamics</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Linear rotating shallow water dynamics</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/FourierFlows/FourierFlows.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/FourierFlows/FourierFlows.jl/blob/main/examples/OneDShallowWaterGeostrophicAdjustment.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Linear-rotating-shallow-water-dynamics"><a class="docs-heading-anchor" href="#Linear-rotating-shallow-water-dynamics">Linear rotating shallow water dynamics</a><a id="Linear-rotating-shallow-water-dynamics-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-rotating-shallow-water-dynamics" title="Permalink"></a></h1><p>This example can be run online via <a href="https://mybinder.org/v2/gh/FourierFlows/FourierFlowsDocumentation/gh-pages?filepath=dev/literated/OneDShallowWaterGeostrophicAdjustment.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a>. Also, it can be viewed as a Jupyter notebook via <a href="https://nbviewer.jupyter.org/github/FourierFlows/FourierFlowsDocumentation/blob/gh-pages/dev/literated/OneDShallowWaterGeostrophicAdjustment.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a>.</p><p>This example solves the linear 1D rotating shallow water equations for the <span>$u(x, t)$</span>, <span>$v(x, t)$</span> and the surface surface elevation <span>$\eta(x, t)$</span>, for a fluid with constant rest-depth <span>$H$</span>. That is, the total fluid&#39;s depth is <span>$H + \eta(x, t)$</span> with <span>$|\eta| \ll H$</span>.</p><p>The linearized equations for the evolution of <span>$u$</span>, <span>$v$</span>, <span>$\eta$</span> are:</p><p class="math-container">\[\begin{aligned}
 \partial_t u - f v &amp; = - g \partial_x \eta - \mathrm{D} u, \\
 \partial_t v + f u &amp; = - \mathrm{D} v, \\
 \partial_t \eta + H \partial_x u &amp; = - \mathrm{D} \eta.
@@ -18,11 +18,14 @@ end</code></pre><p>Now the <code>Vars</code> struct that contains all variables 
   vh :: Atrans
   ηh :: Atrans
 end</code></pre><p>A constructor populates empty arrays based on the dimension of the <code>grid</code> and then creates <code>Vars</code> struct.</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
-    Vars(dev, grid)
-Constructs Vars for 1D shallow water based on the dimensions of arrays of the `grid`.
+    Vars(grid)
+
+Construct the `Vars` for 1D linear shallow water dynamics based on the dimensions of the `grid` arrays.
 &quot;&quot;&quot;
-function Vars(::Dev, grid) where Dev
+function Vars(grid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
+
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
 
@@ -33,6 +36,7 @@ end</code></pre><p>In Fourier space, the 1D linear shallow water dynamics read:<
 \frac{\partial \hat{\eta}}{\partial t} &amp; = \underbrace{ - i k H \hat{u} }_{N_{\eta}} \; \underbrace{- \nu k^2 }_{L_{\eta}} \hat{\eta} .
 \end{aligned}\]</p><p>Although, e.g., terms involving the Coriolis accelaration are, in principle, linear we include them in the nonlinear term <span>$N$</span> because they render the linear operator <span>$L$</span> non-diagonal.</p><p>With these in mind, we construct function <code>calcN!</code> that computes the nonlinear terms.</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
     calcN!(N, sol, t, clock, vars, params, grid)
+
 Compute the nonlinear terms for 1D linear shallow water dynamics.
 &quot;&quot;&quot;
 function calcN!(N, sol, t, clock, vars, params, grid)
@@ -48,12 +52,15 @@ function calcN!(N, sol, t, clock, vars, params, grid)
 
   return nothing
 end</code></pre><p>Next we construct the <code>Equation</code> struct:</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
-    Equation(dev, params, grid)
+    Equation(params, grid)
+
 Construct the equation: the linear part, in this case the hyperviscous dissipation,
 and the nonlinear part, which is computed by `calcN!` function.
 &quot;&quot;&quot;
-function Equation(dev, params, grid)
+function Equation(params, grid)
   T = eltype(grid)
+  dev = grid.device
+
   L = zeros(dev, T, (grid.nkr, 3))
   D = @. - params.ν * grid.kr^(2*params.nν)
 
@@ -64,6 +71,7 @@ function Equation(dev, params, grid)
   return FourierFlows.Equation(L, calcN!, grid)
 end</code></pre><p>We now have all necessary building blocks to construct a <code>FourierFlows.Problem</code>. It would be useful, however, to define some more &quot;helper functions&quot;. For example, a function that updates all variables given the solution <code>sol</code> which comprises <span>$\hat{u}$</span>, <span>$\hat{v}$</span> and <span>$\hat{\eta}$</span>:</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
     updatevars!(prob)
+
 Update the variables in `prob.vars` using the solution in `prob.sol`.
 &quot;&quot;&quot;
 function updatevars!(prob)
@@ -80,7 +88,8 @@ function updatevars!(prob)
   return nothing
 end</code></pre><p>Another useful function is one that prescribes an initial condition to the state variable <code>sol</code>.</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
     set_uvη!(prob, u0, v0, η0)
-Sets the state variable `prob.sol` as the Fourier transforms of `u0`, `v0`, and `η0`
+
+Set the state variable `prob.sol` as the Fourier transforms of `u0`, `v0`, and `η0`
 and update all variables in `prob.vars`.
 &quot;&quot;&quot;
 function set_uvη!(prob, u0, v0, η0)
@@ -88,9 +97,11 @@ function set_uvη!(prob, u0, v0, η0)
 
   A = typeof(vars.u) # determine the type of vars.u
 
-  mul!(vars.uh, grid.rfftplan, A(u0)) # A(u0) converts u0 to the same type as vars expects (useful if u0 is a CPU array while working on the GPU)
-  mul!(vars.vh, grid.rfftplan, A(v0)) # A(v0) converts u0 to the same type as vars expects (useful if v0 is a CPU array while working on the GPU)
-  mul!(vars.ηh, grid.rfftplan, A(η0)) # A(η0) converts u0 to the same type as vars expects (useful if η0 is a CPU array while working on the GPU)
+  # below, e.g., A(u0) converts u0 to the same type as vars expects
+  # (useful when u0 is a CPU array but grid.device is GPU)
+  mul!(vars.uh, grid.rfftplan, A(u0))
+  mul!(vars.vh, grid.rfftplan, A(v0))
+  mul!(vars.ηh, grid.rfftplan, A(η0))
 
   @. sol[:, 1] = vars.uh
   @. sol[:, 2] = vars.vh
@@ -107,16 +118,16 @@ g  = 9.8        # Gravitational acceleration (m s⁻²)
 H  = 200.0      # Fluid depth (m)
 f  = 1e-2       # Coriolis parameter (s⁻¹)
 ν  = 100.0      # Viscosity (m² s⁻¹)
-nν = 1          # Viscosity order (nν = 1 means Laplacian ∇²)</code></pre><h2 id="Construct-the-structs-and-you-are-ready-to-go!"><a class="docs-heading-anchor" href="#Construct-the-structs-and-you-are-ready-to-go!">Construct the <code>struct</code>s and you are ready to go!</a><a id="Construct-the-structs-and-you-are-ready-to-go!-1"></a><a class="docs-heading-anchor-permalink" href="#Construct-the-structs-and-you-are-ready-to-go!" title="Permalink"></a></h2><p>Create a <code>grid</code> and also <code>params</code>, <code>vars</code>, and the <code>equation</code> structs. Then give them all as input to the <code>FourierFlows.Problem()</code> constructor to get a problem struct, <code>prob</code>, that contains all of the above.</p><pre><code class="language-julia hljs">    grid = OneDGrid(dev, nx, Lx)
+nν = 1          # Viscosity order (nν = 1 means Laplacian ∇²)</code></pre><h2 id="Construct-the-structs-and-you-are-ready-to-go!"><a class="docs-heading-anchor" href="#Construct-the-structs-and-you-are-ready-to-go!">Construct the <code>struct</code>s and you are ready to go!</a><a id="Construct-the-structs-and-you-are-ready-to-go!-1"></a><a class="docs-heading-anchor-permalink" href="#Construct-the-structs-and-you-are-ready-to-go!" title="Permalink"></a></h2><p>Create a <code>grid</code> and also <code>params</code>, <code>vars</code>, and the <code>equation</code> structs. Then give them all as input to the <code>FourierFlows.Problem()</code> constructor to get a problem struct, <code>prob</code>, that contains all of the above.</p><pre><code class="language-julia hljs">    grid = OneDGrid(dev; nx, Lx)
   params = Params(ν, nν, g, H, f)
-    vars = Vars(dev, grid)
-equation = Equation(dev, params, grid)
+    vars = Vars(grid)
+equation = Equation(params, grid)
 
-    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)</code></pre><h2 id="Setting-initial-conditions"><a class="docs-heading-anchor" href="#Setting-initial-conditions">Setting initial conditions</a><a id="Setting-initial-conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Setting-initial-conditions" title="Permalink"></a></h2><p>For initial condition we take the fluid at rest (<span>$u = v = 0$</span>). The free surface elevation is perturbed from its rest position (<span>$\eta=0$</span>); the disturbance we impose a Gaussian bump with half-width greater than the deformation radius and on top of that we superimpose some random noise with scales smaller than the deformation radius. We mask the small-scale perturbations so that it only applies in the central part of the domain by applying</p><p>The system develops geostrophically-balanced jets around the Gaussian bump, while the smaller-scale noise propagates away as inertia-gravity waves.</p><p>First let&#39;s construct the Gaussian bump.</p><pre><code class="language-julia hljs">gaussian_width = 6e3
+    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)</code></pre><h2 id="Setting-initial-conditions"><a class="docs-heading-anchor" href="#Setting-initial-conditions">Setting initial conditions</a><a id="Setting-initial-conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Setting-initial-conditions" title="Permalink"></a></h2><p>For initial condition we take the fluid at rest (<span>$u = v = 0$</span>). The free surface elevation is perturbed from its rest position (<span>$\eta=0$</span>); the disturbance we impose a Gaussian bump with half-width greater than the deformation radius and on top of that we superimpose some random noise with scales smaller than the deformation radius. We mask the small-scale perturbations so that it only applies in the central part of the domain by applying</p><p>The system develops geostrophically-balanced jets around the Gaussian bump, while the smaller-scale noise propagates away as inertia-gravity waves.</p><p>First let&#39;s construct the Gaussian bump.</p><pre><code class="language-julia hljs">gaussian_width = 6e3
 gaussian_amplitude = 3.0
 gaussian_bump = @. gaussian_amplitude * exp( - grid.x^2 / (2*gaussian_width^2) )
 
-fig = Figure(resolution = (600, 260))
+fig = Figure(size = (600, 260))
 ax =  Axis(fig[1, 1];
            xlabel = &quot;x [km]&quot;,
            ylabel = &quot;η [m]&quot;,
@@ -131,7 +142,7 @@ noise_amplitude = 0.1 # the amplitude of the noise for η(x, t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
 @. η_noise *= mask    # mask the noise
 
-fig = Figure(resolution = (600, 520))
+fig = Figure(size = (600, 520))
 
 kwargs = (xlabel = &quot;x [km]&quot;, limits = ((-Lx/2e3, Lx/2e3), nothing))
 
@@ -151,7 +162,7 @@ v0 = zeros(grid.nx)
 
 set_uvη!(prob, u0, v0, η0)
 
-fig = Figure(resolution = (600, 260))
+fig = Figure(size = (600, 260))
 
 ax =  Axis(fig[1, 1];
            xlabel = &quot;x [km]&quot;,
@@ -207,7 +218,7 @@ v = @lift irfft(file[string(&quot;snapshots/sol/&quot;, iterations[$n])][:, 2], 
 
 toptitle = @lift &quot;t = &quot; * @sprintf(&quot;%.1f&quot;, file[string(&quot;snapshots/t/&quot;, iterations[$n])]/60) * &quot; min&quot;
 
-fig = Figure(resolution = (600, 800))
+fig = Figure(size = (600, 800))
 
 kwargs_η = (xlabel = &quot;x [km]&quot;, limits = ((-Lx/2e3, Lx/2e3), nothing))
 kwargs_uv = (xlabel = &quot;x [km]&quot;, limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
@@ -221,7 +232,7 @@ ax_v =  Axis(fig[4, 1]; ylabel = &quot;v [m s⁻¹]&quot;, kwargs_uv...)
 Ld = @sprintf &quot;%.2f&quot; sqrt(g * H) / f /1e3     # divide with 1e3 to convert m -&gt; km
 title = &quot;Deformation radius √(gh) / f = &quot;*string(Ld)*&quot; km&quot;
 
-fig[1, 1] = Label(fig, title, textsize=24, tellwidth=false)
+fig[1, 1] = Label(fig, title, fontsize=24, tellwidth=false)
 
 lines!(ax_η, grid.x/1e3, η; # divide with 1e3 to convert m -&gt; km
        color = (:blue, 0.7))
@@ -240,7 +251,7 @@ end</code></pre><p><video src="../onedshallowwater.mp4" controls="true" title><a
 v_{\rm geostrophic} &amp; =   \frac{g}{f} \frac{\partial \eta}{\partial x} \ , \\
 u_{\rm geostrophic} &amp; = - \frac{g}{f} \frac{\partial \eta}{\partial y} = 0 \ .
 \end{aligned}\]</p><pre><code class="language-julia hljs">u_geostrophic = zeros(grid.nx)  # -g/f ∂η/∂y = 0
-v_geostrophic = params.g / params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x</code></pre><p>The geostrophic solution should capture well the the behavior of the flow in the center of the domain, after small-scale disturbances propagate away. Let&#39;s plot and see!</p><pre><code class="language-julia hljs">fig = Figure(resolution = (600, 600))
+v_geostrophic = params.g / params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x</code></pre><p>The geostrophic solution should capture well the the behavior of the flow in the center of the domain, after small-scale disturbances propagate away. Let&#39;s plot and see!</p><pre><code class="language-julia hljs">fig = Figure(size = (600, 600))
 
 kwargs = (xlabel = &quot;x [km]&quot;, limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
 
@@ -248,7 +259,7 @@ ax_u =  Axis(fig[2, 1]; ylabel = &quot;u [m s⁻¹]&quot;, kwargs...)
 
 ax_v =  Axis(fig[3, 1]; ylabel = &quot;v [m s⁻¹]&quot;, kwargs...)
 
-fig[1, 1] = Label(fig, &quot;Geostrophic balance&quot;, textsize=24, tellwidth=false)
+fig[1, 1] = Label(fig, &quot;Geostrophic balance&quot;, fontsize=24, tellwidth=false)
 
 lines!(ax_u, grid.x/1e3, vars.u; # divide with 1e3 to convert m -&gt; km
        label = &quot;u&quot;,
@@ -272,4 +283,4 @@ lines!(ax_v, grid.x/1e3, v_geostrophic; # divide with 1e3 to convert m -&gt; km
        linewidth = 3,
        color = (:purple, 0.7))
 
-axislegend(ax_v)</code></pre><p><img src="../geostrophic_balance.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../gpu/">« GPU</a><a class="docs-footer-nextpage" href="../../contributing/">Contributor&#39;s guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Tuesday 30 August 2022 11:23">Tuesday 30 August 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+axislegend(ax_v)</code></pre><p><img src="../geostrophic_balance.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../gpu/">« GPU</a><a class="docs-footer-nextpage" href="../../contributing/">Contributor&#39;s guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Thursday 25 January 2024 09:25">Thursday 25 January 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
