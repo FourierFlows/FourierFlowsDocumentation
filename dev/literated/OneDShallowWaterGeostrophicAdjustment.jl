@@ -21,11 +21,14 @@ end
 nothing #hide
 
 """
-    Vars(dev, grid)
-Constructs Vars for 1D shallow water based on the dimensions of arrays of the `grid`.
+    Vars(grid)
+
+Construct the `Vars` for 1D linear shallow water dynamics based on the dimensions of the `grid` arrays.
 """
-function Vars(::Dev, grid) where Dev
+function Vars(grid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
+
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
 
@@ -35,6 +38,7 @@ nothing #hide
 
 """
     calcN!(N, sol, t, clock, vars, params, grid)
+
 Compute the nonlinear terms for 1D linear shallow water dynamics.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
@@ -53,12 +57,15 @@ end
 nothing #hide
 
 """
-    Equation(dev, params, grid)
+    Equation(params, grid)
+
 Construct the equation: the linear part, in this case the hyperviscous dissipation,
 and the nonlinear part, which is computed by `calcN!` function.
 """
-function Equation(dev, params, grid)
+function Equation(params, grid)
   T = eltype(grid)
+  dev = grid.device
+
   L = zeros(dev, T, (grid.nkr, 3))
   D = @. - params.ν * grid.kr^(2*params.nν)
 
@@ -72,6 +79,7 @@ nothing #hide
 
 """
     updatevars!(prob)
+
 Update the variables in `prob.vars` using the solution in `prob.sol`.
 """
 function updatevars!(prob)
@@ -91,7 +99,8 @@ nothing #hide
 
 """
     set_uvη!(prob, u0, v0, η0)
-Sets the state variable `prob.sol` as the Fourier transforms of `u0`, `v0`, and `η0`
+
+Set the state variable `prob.sol` as the Fourier transforms of `u0`, `v0`, and `η0`
 and update all variables in `prob.vars`.
 """
 function set_uvη!(prob, u0, v0, η0)
@@ -99,9 +108,11 @@ function set_uvη!(prob, u0, v0, η0)
 
   A = typeof(vars.u) # determine the type of vars.u
 
-  mul!(vars.uh, grid.rfftplan, A(u0)) # A(u0) converts u0 to the same type as vars expects (useful if u0 is a CPU array while working on the GPU)
-  mul!(vars.vh, grid.rfftplan, A(v0)) # A(v0) converts u0 to the same type as vars expects (useful if v0 is a CPU array while working on the GPU)
-  mul!(vars.ηh, grid.rfftplan, A(η0)) # A(η0) converts u0 to the same type as vars expects (useful if η0 is a CPU array while working on the GPU)
+  # below, e.g., A(u0) converts u0 to the same type as vars expects
+  # (useful when u0 is a CPU array but grid.device is GPU)
+  mul!(vars.uh, grid.rfftplan, A(u0))
+  mul!(vars.vh, grid.rfftplan, A(v0))
+  mul!(vars.ηh, grid.rfftplan, A(η0))
 
   @. sol[:, 1] = vars.uh
   @. sol[:, 2] = vars.vh
@@ -130,19 +141,19 @@ f  = 1e-2       # Coriolis parameter (s⁻¹)
 nν = 1          # Viscosity order (nν = 1 means Laplacian ∇²)
 nothing # hide
 
-    grid = OneDGrid(dev, nx, Lx)
+    grid = OneDGrid(dev; nx, Lx)
   params = Params(ν, nν, g, H, f)
-    vars = Vars(dev, grid)
-equation = Equation(dev, params, grid)
+    vars = Vars(grid)
+equation = Equation(params, grid)
 
-    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 nothing #hide
 
 gaussian_width = 6e3
 gaussian_amplitude = 3.0
 gaussian_bump = @. gaussian_amplitude * exp( - grid.x^2 / (2*gaussian_width^2) )
 
-fig = Figure(resolution = (600, 260))
+fig = Figure(size = (600, 260))
 ax =  Axis(fig[1, 1];
            xlabel = "x [km]",
            ylabel = "η [m]",
@@ -161,7 +172,7 @@ noise_amplitude = 0.1 # the amplitude of the noise for η(x, t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
 @. η_noise *= mask    # mask the noise
 
-fig = Figure(resolution = (600, 520))
+fig = Figure(size = (600, 520))
 
 kwargs = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), nothing))
 
@@ -185,7 +196,7 @@ v0 = zeros(grid.nx)
 
 set_uvη!(prob, u0, v0, η0)
 
-fig = Figure(resolution = (600, 260))
+fig = Figure(size = (600, 260))
 
 ax =  Axis(fig[1, 1];
            xlabel = "x [km]",
@@ -230,7 +241,7 @@ v = @lift irfft(file[string("snapshots/sol/", iterations[$n])][:, 2], nx)
 
 toptitle = @lift "t = " * @sprintf("%.1f", file[string("snapshots/t/", iterations[$n])]/60) * " min"
 
-fig = Figure(resolution = (600, 800))
+fig = Figure(size = (600, 800))
 
 kwargs_η = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), nothing))
 kwargs_uv = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
@@ -244,7 +255,7 @@ ax_v =  Axis(fig[4, 1]; ylabel = "v [m s⁻¹]", kwargs_uv...)
 Ld = @sprintf "%.2f" sqrt(g * H) / f /1e3     # divide with 1e3 to convert m -> km
 title = "Deformation radius √(gh) / f = "*string(Ld)*" km"
 
-fig[1, 1] = Label(fig, title, textsize=24, tellwidth=false)
+fig[1, 1] = Label(fig, title, fontsize=24, tellwidth=false)
 
 lines!(ax_η, grid.x/1e3, η; # divide with 1e3 to convert m -> km
        color = (:blue, 0.7))
@@ -267,7 +278,7 @@ v_geostrophic = params.g / params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  
 
 nothing # hide
 
-fig = Figure(resolution = (600, 600))
+fig = Figure(size = (600, 600))
 
 kwargs = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
 
@@ -275,7 +286,7 @@ ax_u =  Axis(fig[2, 1]; ylabel = "u [m s⁻¹]", kwargs...)
 
 ax_v =  Axis(fig[3, 1]; ylabel = "v [m s⁻¹]", kwargs...)
 
-fig[1, 1] = Label(fig, "Geostrophic balance", textsize=24, tellwidth=false)
+fig[1, 1] = Label(fig, "Geostrophic balance", fontsize=24, tellwidth=false)
 
 lines!(ax_u, grid.x/1e3, vars.u; # divide with 1e3 to convert m -> km
        label = "u",
@@ -304,4 +315,3 @@ axislegend(ax_v)
 save("geostrophic_balance.svg", fig); nothing # hide
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-
